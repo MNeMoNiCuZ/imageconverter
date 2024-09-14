@@ -67,7 +67,7 @@ label.pack(pady=20)
 
 # Dropdown menu for format selection, with webp added between gif and tiff
 format_choice = tk.StringVar(value="jpg")
-formats = ttk.Combobox(root, textvariable=format_choice, values=["jpg", "png", "bmp", "gif", "webp", "tiff"], state="readonly")
+formats = ttk.Combobox(root, textvariable=format_choice, values=["jpg", "png", "gif", "bmp", "webp", "tiff"], state="readonly")
 formats.pack()
 
 # Checkbox for Overwrite option
