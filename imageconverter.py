@@ -3,19 +3,27 @@ from tkinter import ttk
 from tkinterdnd2 import TkinterDnD, DND_FILES
 from PIL import Image
 import os
+import re
+
+def clean_filepath(filepath):
+    # Remove braces and extra spaces from the filepath
+    return re.sub(r"[{}]", "", filepath).strip()
 
 def convert_images(filepaths, format_choice, overwrite):
     for filepath in filepaths:
         try:
+            # Clean the filepath
+            filepath = clean_filepath(filepath)
+
             # Handle different cases of file extensions and skip if format is the same
             file_name, file_ext = os.path.splitext(filepath)
             file_ext = file_ext.lower()[1:]  # Strip the dot and make lowercase (e.g., .JPG -> jpg)
-
+            
             output_format = format_choice.get().lower()
-
+            
             # Treat jpeg as jpg
             if file_ext == "jpeg":
-                file_ext = "jpg"  
+                file_ext = "jpg"
 
             if file_ext == output_format:
                 print(f"Skipping {filepath} (already in {output_format.upper()} format)")
@@ -23,8 +31,9 @@ def convert_images(filepaths, format_choice, overwrite):
 
             img = Image.open(filepath)
 
-            # Define the output path
-            output_file = f"{file_name}.{output_format}"
+            # Define the output path based on the input file directory
+            output_dir = os.path.dirname(filepath)  # Use the input file's directory
+            output_file = os.path.join(output_dir, f"{os.path.splitext(os.path.basename(filepath))[0]}.{output_format}")
             
             # Check for overwrite option
             if not overwrite.get() and os.path.exists(output_file):
@@ -52,9 +61,12 @@ def convert_images(filepaths, format_choice, overwrite):
             print(f"Failed to convert {filepath}: {e}")
 
 def on_drop(event):
-    files = event.data.split()
-    print(f"Files dropped: {files}")
-    convert_images(files, format_choice, overwrite_var)
+    # Split file paths correctly, handling spaces and braces
+    files = re.findall(r'\{(.*?)\}|\S+', event.data)
+    cleaned_files = [clean_filepath(f) for f in files]
+    
+    print(f"Files dropped: {cleaned_files}")
+    convert_images(cleaned_files, format_choice, overwrite_var)
 
 # Create the TkinterDnD window
 root = TkinterDnD.Tk()
@@ -66,7 +78,7 @@ label = tk.Label(root, text="Drag and drop image files here\n\nImages are saved 
 label.pack(pady=20)
 
 # Dropdown menu for format selection, with webp added between gif and tiff
-format_choice = tk.StringVar(value="jpg")
+format_choice = tk.StringVar(value="png")  # Set default to PNG
 formats = ttk.Combobox(root, textvariable=format_choice, values=["jpg", "png", "gif", "bmp", "webp", "tiff"], state="readonly")
 formats.pack()
 
