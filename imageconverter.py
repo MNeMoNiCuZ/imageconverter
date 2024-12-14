@@ -6,10 +6,12 @@ import os
 import re
 
 def clean_filepath(filepath):
-    print(f"Cleaning filepath: {filepath}")
-    cleaned = re.sub(r"[{}]", "", filepath).strip()
-    print(f"Cleaned filepath: {cleaned}")
-    return cleaned
+    print(f"Original dropped filepath: {filepath}")
+    # Remove enclosing braces (if any) and whitespace
+    filepath = filepath.strip().strip("{}")
+    filepath = os.path.normpath(filepath)  # Normalize slashes
+    print(f"Cleaned and normalized filepath: {filepath}")
+    return filepath
 
 def convert_images(filepaths, format_choice, overwrite):
     print(f"Starting conversion with format: {format_choice.get()}, overwrite: {overwrite.get()}")
@@ -61,22 +63,26 @@ def convert_images(filepaths, format_choice, overwrite):
         except Exception as e:
             print(f"Failed to convert {filepath}: {e}")
 
+
 def on_drop(event):
-    print(f"Drop event data: {event.data}")
+    print(f"Raw drop event data: {event.data}")
+    # Handle paths wrapped in curly braces properly
+    if "{" in event.data and "}" in event.data:
+        files = [event.data.strip()]
+    else:
+        # Split paths (assume newline or space separation for multiple files)
+        files = event.data.split()
     
-    # Split paths by newline or space if multiple files are dropped
-    files = event.data.split() if event.data else []
+    # Clean file paths
     cleaned_files = [clean_filepath(f) for f in files if f]
 
-    # Print all detected files
-    print(f"Files after split and cleaning: {cleaned_files}")
+    print(f"Files after cleaning: {cleaned_files}")
 
     if not cleaned_files:
-        print("No valid files detected in the drop. Please check the file paths.")
+        print("No valid files detected in the drop.")
         return
     
     convert_images(cleaned_files, format_choice, overwrite_var)
-
 
 root = TkinterDnD.Tk()
 root.title("Image Converter")
